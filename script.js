@@ -21,8 +21,10 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = firebase.auth();
 
-// --- AUTH LOGIC ---
 let isSignUp = false;
+
+function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
+function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
 
 function toggleAuthMode() {
     isSignUp = !isSignUp;
@@ -34,28 +36,42 @@ function handleAuth() {
     const email = document.getElementById('authEmail').value;
     const pass = document.getElementById('authPassword').value;
     if (isSignUp) {
-        auth.createUserWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+        auth.createUserWithEmailAndPassword(email, pass).then(closeAuth).catch(err => alert(err.message));
     } else {
-        auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
+        auth.signInWithEmailAndPassword(email, pass).then(closeAuth).catch(err => alert(err.message));
     }
 }
 
 function logout() { auth.signOut(); }
 
+// --- AUTH STATE LISTENER (THE KEY CHANGE) ---
 auth.onAuthStateChanged(user => {
+    const authBtn = document.getElementById('authBtn');
+    const userGreeting = document.getElementById('userGreeting');
+    const librarySection = document.getElementById('librarySection');
+    const guestMsg = document.getElementById('guestMsg');
+
     if (user) {
-        document.getElementById('authOverlay').style.display = 'none';
+        userGreeting.innerText = `Hi, ${user.email.split('@')[0]}`;
+        authBtn.innerText = "Logout";
+        authBtn.onclick = logout;
+        librarySection.style.display = 'block';
+        guestMsg.style.display = 'none';
         displaySongs();
     } else {
-        document.getElementById('authOverlay').style.display = 'flex';
+        userGreeting.innerText = "Guest Mode";
+        authBtn.innerText = "Sign In";
+        authBtn.onclick = openAuth;
+        librarySection.style.display = 'none';
+        guestMsg.style.display = 'block';
     }
 });
 
-// --- TRANSPOSER LOGIC ---
+// --- CORE MUSIC LOGIC (REMAINS THE SAME) ---
 const synth = new Tone.PolySynth(Tone.Synth).toDestination();
 const pianoContainer = document.getElementById('piano');
-
 const pianoNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
 for (let i = 0; i < 24; i++) {
     const n = pianoNotes[i % 12];
     const key = document.createElement('div');
@@ -86,15 +102,12 @@ function handleTranspose() {
             } else {
                 res = Tonal.Note.transpose(item, interval);
             }
-
             if (accidental === 'sharp') res = Tonal.Note.simplify(res).replace(/b/g, '#');
             else if (accidental === 'flat') res = Tonal.Note.enharmonic(res);
             else res = Tonal.Note.simplify(res);
-            
             return res;
         } catch (e) { return item; }
     });
-
     document.getElementById('resultText').innerText = transposedItems.join(" ");
     playMusic();
 }
@@ -104,43 +117,31 @@ async function playMusic() {
     const type = document.getElementById('typeSelect').value;
     const text = document.getElementById('resultText').innerText;
     if (text === "--") return;
-
     const items = text.split(/\s+/);
     let now = Tone.now();
-    
     items.forEach((item, index) => {
         let notesToPlay = (type === 'note') ? [item] : (Tonal.Chord.get(item).notes.length > 0 ? Tonal.Chord.get(item).notes : [item]);
-        
         const formatted = notesToPlay.map(n => {
             let s = Tonal.Note.simplify(n);
             let fullNote = /\d/.test(s) ? s : s + "4";
-            
             setTimeout(() => {
                 const k = document.querySelector(`[data-note="${fullNote}"]`);
-                if (k) {
-                    k.classList.add('active');
-                    setTimeout(() => k.classList.remove('active'), 400);
-                }
+                if (k) { k.classList.add('active'); setTimeout(() => k.classList.remove('active'), 400); }
             }, (now + (index * 0.5) - Tone.now()) * 1000);
-
             return fullNote;
         });
         synth.triggerAttackRelease(formatted, "4n", now + (index * 0.5));
     });
 }
 
-// --- SONG SAVING (PRIVATE TO USER) ---
 function saveSong() {
     const user = auth.currentUser;
     const title = document.getElementById('songTitle').value.trim();
     const data = document.getElementById('resultText').innerText;
-
     if (!user || !title || data === "--") return;
-
     let lib = JSON.parse(localStorage.getItem(`songs_${user.uid}`)) || [];
     lib.push({ id: Date.now(), title, data });
     localStorage.setItem(`songs_${user.uid}`, JSON.stringify(lib));
-    
     document.getElementById('songTitle').value = "";
     displaySongs();
 }
@@ -149,7 +150,6 @@ function displaySongs() {
     const user = auth.currentUser;
     const list = document.getElementById('songsList');
     if (!user) return;
-
     const lib = JSON.parse(localStorage.getItem(`songs_${user.uid}`)) || [];
     list.innerHTML = lib.map(song => `
         <li>
@@ -167,6 +167,4 @@ function deleteSong(id) {
     displaySongs();
 }
 
-function copyToClipboard() {
-    navigator.clipboard.writeText(document.getElementById('resultText').innerText);
-}
+function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('resultText').innerText); }
