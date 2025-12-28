@@ -4,97 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Music Transposer</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/tonal/browser/tonal.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
     <style>
-        :root {
-            --bg: #121212;
-            --card: #1e1e1e;
-            --accent: #00d4ff;
-            --text: #e0e0e0;
-            --white-key: #ffffff;
-            --black-key: #333;
-        }
-
-        body { 
-            background: var(--bg); color: var(--text); 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            display: flex; justify-content: center; padding: 20px;
-        }
-
-        .container { 
-            background: var(--card); padding: 2rem; border-radius: 20px; 
-            width: 100%; max-width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        h1 { text-align: center; margin-bottom: 20px; color: var(--accent); }
-
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #00d4ff; --text: #e0e0e0; --white-key: #ffffff; --black-key: #333; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .container { background: var(--card); padding: 2rem; border-radius: 20px; width: 100%; max-width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: var(--accent); }
         .control-row { display: flex; gap: 15px; margin-bottom: 10px; }
         .control-row div { flex: 1; }
-
         label { font-size: 0.8rem; font-weight: bold; color: #888; }
-
-        input, select, textarea { 
-            width: 100%; background: #2d2d2d; border: 1px solid #444; 
-            color: white; padding: 12px; border-radius: 8px; margin-top: 5px;
-            box-sizing: border-box; font-size: 1rem;
-        }
-
-        textarea { font-family: monospace; resize: vertical; }
-
-        .main-btn { 
-            width: 100%; background: var(--accent); color: #000; font-weight: bold;
-            padding: 15px; border: none; border-radius: 8px; cursor: pointer; 
-            margin-top: 20px; font-size: 1.1rem;
-        }
-
-        .main-btn:hover { opacity: 0.9; }
-
-        #outputSection { 
-            background: #2d2d2d; margin-top: 25px; padding: 20px; 
-            border-radius: 10px; text-align: center; 
-        }
-
-        #resultText { 
-            color: var(--accent); font-size: 1.8rem; margin: 10px 0;
-            word-wrap: break-word; min-height: 40px;
-        }
-
+        input, select, textarea { width: 100%; background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; margin-top: 5px; box-sizing: border-box; }
+        .main-btn { width: 100%; background: var(--accent); color: #000; font-weight: bold; padding: 15px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; font-size: 1.1rem; }
+        #outputSection { background: #2d2d2d; margin-top: 25px; padding: 20px; border-radius: 10px; text-align: center; }
+        #resultText { color: var(--accent); font-size: 1.8rem; margin: 10px 0; min-height: 40px; }
         .button-group { display: flex; gap: 10px; margin-top: 15px; }
-        .secondary-btn { 
-            flex: 1; padding: 10px; border: none; border-radius: 5px; 
-            color: white; cursor: pointer; font-weight: bold;
-        }
-
-        /* Piano UI */
-        .piano { 
-            display: flex; justify-content: center; height: 100px; 
-            margin-top: 30px; position: relative; padding-bottom: 10px;
-        }
-        .key { 
-            border: 1px solid #888; background: var(--white-key); 
-            width: 35px; height: 100%; border-radius: 0 0 5px 5px; 
-            cursor: pointer; z-index: 1; box-sizing: border-box;
-        }
-        .key.black { 
-            background: var(--black-key); width: 22px; height: 60%; 
-            margin-left: -11px; margin-right: -11px; z-index: 2; border: none;
-        }
+        .secondary-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; color: white; cursor: pointer; font-weight: bold; }
+        .piano { display: flex; justify-content: center; height: 100px; margin-top: 30px; position: relative; }
+        .key { border: 1px solid #888; background: var(--white-key); width: 35px; height: 100%; border-radius: 0 0 5px 5px; z-index: 1; box-sizing: border-box; }
+        .key.black { background: var(--black-key); width: 22px; height: 60%; margin-left: -11px; margin-right: -11px; z-index: 2; border: none; }
         .key.active { background: var(--accent) !important; transform: translateY(2px); }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Studio Transposer</h1>
-        
         <div class="control-row">
             <div>
                 <label>Mode</label>
                 <select id="typeSelect">
-                    <option value="note">Notes</option>
+                    <option value="note">Notes Only</option>
                     <option value="chord" selected>Chords</option>
                     <option value="numeral">Roman Numerals</option>
                 </select>
@@ -104,26 +43,12 @@
                 <input type="text" id="keyInput" value="C">
             </div>
         </div>
-
-        <textarea id="userInput" placeholder="Enter music (e.g. C Eb G)" rows="3"></textarea>
-        
+        <textarea id="userInput" placeholder="Enter music (e.g. C E G)" rows="3"></textarea>
         <div class="control-row">
-            <div>
-                <label>Shift (Semitones)</label>
-                <input type="number" id="semitones" value="2">
-            </div>
-            <div>
-                <label>Accidentals</label>
-                <select id="accidentalType">
-                    <option value="auto">Auto</option>
-                    <option value="sharp"># Sharps</option>
-                    <option value="flat">b Flats</option>
-                </select>
-            </div>
+            <div><label>Shift (Semitones)</label><input type="number" id="semitones" value="2"></div>
+            <div><label>Accidentals</label><select id="accidentalType"><option value="auto">Auto</option><option value="sharp"># Sharps</option><option value="flat">b Flats</option></select></div>
         </div>
-
         <button class="main-btn" onclick="handleTranspose()">Transpose & Play</button>
-
         <div id="outputSection">
             <h2 id="resultText">--</h2>
             <div class="button-group">
@@ -132,7 +57,6 @@
                 <button onclick="clearAll()" class="secondary-btn" style="background:#dc3545">Clear</button>
             </div>
         </div>
-
         <div class="piano" id="piano"></div>
     </div>
 
@@ -140,7 +64,7 @@
         const synth = new Tone.PolySynth(Tone.Synth).toDestination();
         const pianoContainer = document.getElementById('piano');
 
-        // Build Piano
+        // Build Piano keys
         const pianoNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         for (let i = 0; i < 24; i++) {
             const n = pianoNotes[i % 12];
@@ -164,12 +88,14 @@
             const transposedItems = items.map(item => {
                 try {
                     let res;
+                    // FIX: Ensure we don't accidentally turn a note into a chord here
                     if (type === 'numeral') {
-                        const chord = Tonal.Progression.fromRomanNumerals(keySig, [item])[0];
-                        res = Tonal.Chord.transpose(chord, interval);
+                        const chordName = Tonal.Progression.fromRomanNumerals(keySig, [item])[0];
+                        res = Tonal.Chord.transpose(chordName, interval);
                     } else if (type === 'chord') {
                         res = Tonal.Chord.transpose(item, interval);
                     } else {
+                        // STRICT NOTE MODE: Only transpose as a single note
                         res = Tonal.Note.transpose(item, interval);
                     }
 
@@ -187,7 +113,7 @@
 
         async function playMusic() {
             if (Tone.context.state !== 'running') await Tone.start();
-            
+            const type = document.getElementById('typeSelect').value;
             const text = document.getElementById('resultText').innerText;
             if (text === "--") return;
 
@@ -195,15 +121,23 @@
             let now = Tone.now();
             
             items.forEach((item, index) => {
-                let notesToPlay = Tonal.Chord.get(item).notes.length > 0 
-                    ? Tonal.Chord.get(item).notes 
-                    : [item];
+                let notesToPlay = [];
+
+                // STRICT PLAYBACK MODE
+                if (type === 'note') {
+                    // Force only the root note to play
+                    notesToPlay = [item];
+                } else {
+                    // Allow chord tones for Chords and Numerals
+                    const chordNotes = Tonal.Chord.get(item).notes;
+                    notesToPlay = chordNotes.length > 0 ? chordNotes : [item];
+                }
                 
                 const formatted = notesToPlay.map(n => {
                     let s = Tonal.Note.simplify(n);
                     let fullNote = /\d/.test(s) ? s : s + "4";
                     
-                    // Highlight Key
+                    // Highlight Logic
                     setTimeout(() => {
                         const k = document.querySelector(`[data-note="${fullNote}"]`);
                         if (k) {
