@@ -55,6 +55,16 @@
             <div><label>Sound</label><select id="soundType"><option value="triangle">Triangle</option><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Sawtooth</option></select></div>
         </div>
         <button class="main-btn" onclick="handleTranspose()">Transpose & Play</button>
+        <div class="save-row">
+    <input type="text" id="songTitle" placeholder="Song Title (e.g. My New Hit)">
+    <button onclick="saveSong()" class="secondary-btn" style="background: #28a745; margin-top: 5px;">💾 Save Song</button>
+</div>
+
+<div id="savedSongsSection" style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+    <label>Your Library</label>
+    <ul id="songsList" style="list-style: none; padding: 0; max-height: 150px; overflow-y: auto;">
+        </ul>
+</div>
         <div id="outputSection">
             <h2 id="resultText">--</h2>
             <div class="button-group">
