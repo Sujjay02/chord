@@ -6,6 +6,7 @@
     <title>Pro Music Transposer</title>
     <script src="https://cdn.jsdelivr.net/npm/tonal/browser/tonal.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --accent: #00d4ff; --text: #e0e0e0; --white-key: #ffffff; --black-key: #333; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
@@ -24,6 +25,7 @@
         .key { border: 1px solid #888; background: var(--white-key); width: 35px; height: 100%; border-radius: 0 0 5px 5px; z-index: 1; box-sizing: border-box; }
         .key.black { background: var(--black-key); width: 22px; height: 60%; margin-left: -11px; margin-right: -11px; z-index: 2; border: none; }
         .key.active { background: var(--accent) !important; transform: translateY(2px); }
+        #sheetMusic { background: white; margin-top: 20px; padding: 10px; border-radius: 10px; overflow-x: auto; display: flex; justify-content: center; min-height: 150px; }
     </style>
 </head>
 <body>
@@ -48,6 +50,10 @@
             <div><label>Shift (Semitones)</label><input type="number" id="semitones" value="2"></div>
             <div><label>Accidentals</label><select id="accidentalType"><option value="auto">Auto</option><option value="sharp"># Sharps</option><option value="flat">b Flats</option></select></div>
         </div>
+        <div class="control-row">
+            <div><label>Tempo (BPM)</label><input type="number" id="tempo" value="120" min="40" max="280"></div>
+            <div><label>Sound</label><select id="soundType"><option value="triangle">Triangle</option><option value="sine">Sine</option><option value="square">Square</option><option value="sawtooth">Sawtooth</option></select></div>
+        </div>
         <button class="main-btn" onclick="handleTranspose()">Transpose & Play</button>
         <div id="outputSection">
             <h2 id="resultText">--</h2>
@@ -57,6 +63,7 @@
                 <button onclick="clearAll()" class="secondary-btn" style="background:#dc3545">Clear</button>
             </div>
         </div>
+        <div id="sheetMusic"></div>
         <div class="piano" id="piano"></div>
     </div>
 
@@ -108,6 +115,7 @@
             });
 
             document.getElementById('resultText').innerText = transposedItems.join(" ");
+            renderSheetMusic(transposedItems);
             playMusic();
         }
 
@@ -115,10 +123,15 @@
             if (Tone.context.state !== 'running') await Tone.start();
             const type = document.getElementById('typeSelect').value;
             const text = document.getElementById('resultText').innerText;
+            const bpm = parseInt(document.getElementById('tempo').value) || 120;
+            const soundType = document.getElementById('soundType').value;
+
             if (text === "--") return;
 
+            synth.set({ oscillator: { type: soundType } });
             const items = text.split(/\s+/);
             let now = Tone.now();
+            const beatDuration = 60 / bpm;
             
             items.forEach((item, index) => {
                 let notesToPlay = [];
@@ -144,18 +157,74 @@
                             k.classList.add('active');
                             setTimeout(() => k.classList.remove('active'), 400);
                         }
-                    }, (now + (index * 0.5) - Tone.now()) * 1000);
+                    }, (now + (index * beatDuration) - Tone.now()) * 1000);
 
                     return fullNote;
                 });
 
-                synth.triggerAttackRelease(formatted, "4n", now + (index * 0.5));
+                synth.triggerAttackRelease(formatted, "4n", now + (index * beatDuration));
             });
+        }
+
+        function renderSheetMusic(items) {
+            const div = document.getElementById('sheetMusic');
+            div.innerHTML = '';
+            if (!items || items.length === 0) return;
+
+            const VF = Vex.Flow;
+            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+            
+            // Calculate width dynamically to allow scrolling for long progressions
+            const width = Math.max(div.clientWidth, items.length * 60 + 50);
+            renderer.resize(width, 150);
+            
+            const context = renderer.getContext();
+            const stave = new VF.Stave(10, 20, width - 20);
+            stave.addClef("treble").setContext(context).draw();
+
+            const type = document.getElementById('typeSelect').value;
+
+            const notes = items.map(item => {
+                let keys = [];
+                // Determine which notes to draw (Single note vs Chord)
+                if (type === 'note') {
+                    keys = [item];
+                } else {
+                    const c = Tonal.Chord.get(item);
+                    keys = c.empty ? [item] : c.notes;
+                }
+
+                // Convert Tonal notes (e.g., "C#") to VexFlow keys (e.g., "c#/4")
+                const vfKeys = keys.map(k => {
+                    let s = Tonal.Note.simplify(k);
+                    if (!s) return "b/4"; // Fallback for invalid notes
+                    if (!/\d/.test(s)) s += "4"; // Default to 4th octave
+                    const match = s.match(/^([A-G])([#b]*)(\d+)$/);
+                    if (!match) return "b/4";
+                    return `${match[1].toLowerCase()}${match[2]}/${match[3]}`;
+                });
+
+                const staveNote = new VF.StaveNote({ keys: vfKeys, duration: "q" });
+                
+                // Add accidentals (sharps/flats) where needed
+                vfKeys.forEach((key, i) => {
+                    const acc = key.split("/")[0].substring(1);
+                    if (acc) staveNote.addModifier(new VF.Accidental(acc), i);
+                });
+                return staveNote;
+            });
+
+            const voice = new VF.Voice({num_beats: notes.length, beat_value: 4});
+            voice.addTickables(notes);
+            
+            new VF.Formatter().joinVoices([voice]).format([voice], width - 50);
+            voice.draw(context, stave);
         }
 
         function clearAll() {
             document.getElementById('userInput').value = '';
             document.getElementById('resultText').innerText = '--';
+            document.getElementById('sheetMusic').innerHTML = '';
         }
 
         function copyToClipboard() {

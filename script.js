@@ -1,7 +1,6 @@
 const synth = new Tone.PolySynth(Tone.Synth).toDestination();
 const pianoContainer = document.getElementById('piano');
 
-// 1. Generate Piano Keys
 const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 for (let i = 0; i < 24; i++) { // 2 octaves
     const note = notes[i % 12];
