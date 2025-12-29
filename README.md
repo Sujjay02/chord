@@ -1,9 +1,9 @@
-# 🎵 Universal Music Transposer
+# 🎵 Pro Music Transposer
 
 A simple, powerful web-based tool to transpose notes, chords, and scales in real-time. Built with HTML, CSS, JavaScript, and the [Tonal.js](https://github.com/tonaljs/tonal) library.
 
 ## 🚀 Live Demo
-**[Insert your GitHub Pages Link Here]**
+**[Live Demo Here](/spiffy-manatee-8cc4ee.netlify.app)**
 
 ## ✨ Features
 * **Note Transposition:** Quickly shift individual notes (e.g., C# to Eb).
@@ -22,9 +22,3 @@ A simple, powerful web-based tool to transpose notes, chords, and scales in real
 2.  **Input Data:** Type your music data (e.g., `Ab`, `G7`, or `D minor`).
 3.  **Set Semitones:** Enter how many semitones you want to shift (positive for up, negative for down).
 4.  **Transpose:** Click the button to see your result instantly.
-
-## 🔧 Local Development
-To run this project locally:
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/YOUR_USERNAME/note-transposer.git](https://github.com/YOUR_USERNAME/note-transposer.git)
